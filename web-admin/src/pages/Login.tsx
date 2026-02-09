@@ -3,21 +3,39 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('logo_url')
+        .eq('id', 1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching school logo:', error);
+      } else if (data && data.logo_url) {
+        setLogoUrl(data.logo_url);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -34,12 +52,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+        {logoUrl && (
+          <div className="flex justify-center pt-6">
+            <img src={`${logoUrl}?t=${new Date().getTime()}`} alt="School Logo" className="h-20 object-contain" />
+          </div>
+        )}
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Selamat Datang</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account.
+            Silakan login untuk mengakses dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

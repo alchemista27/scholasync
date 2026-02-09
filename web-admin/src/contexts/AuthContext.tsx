@@ -12,11 +12,41 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const setFavicon = (url: string) => {
+  let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+  if (link) {
+    link.href = url;
+  } else {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = url;
+    document.getElementsByTagName('head')[0].appendChild(link);
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAndSetFavicon = async () => {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('logo_url')
+        .eq('id', 1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching school logo for favicon:', error);
+      } else if (data && data.logo_url) {
+        setFavicon(data.logo_url);
+      }
+    };
+
+    fetchAndSetFavicon();
+  }, []);
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -36,13 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Error fetching user role:", roleError);
             setRole(null);
           } else {
-            // Safely access the role name to prevent crashes
             setRole((roleData as any)?.role?.name ?? null);
           }
         } else {
           setRole(null);
         }
-        // Set loading to false after the first auth event is processed
         setLoading(false);
       }
     );
@@ -59,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
   };
 
-  // Render children only when the initial loading is complete
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 }
 

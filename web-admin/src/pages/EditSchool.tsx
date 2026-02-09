@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 export function EditSchool() {
@@ -25,6 +25,8 @@ export function EditSchool() {
     website: '',
   });
   const [loading, setLoading] = useState(true);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSchool = async () => {
@@ -42,8 +44,8 @@ export function EditSchool() {
             name: data.name || '',
             address: data.address || '',
             logo_url: data.logo_url || '',
-            latitude: data.latitude || '',
-            longitude: data.longitude || '',
+            latitude: data.latitude?.toString() || '',
+            longitude: data.longitude?.toString() || '',
             phone_number: data.phone_number || '',
             website: data.website || '',
         });
@@ -62,28 +64,70 @@ export function EditSchool() {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setLogoFile(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Convert empty strings to null for numeric fields if necessary
-    const schoolData = {
-        ...school,
-        latitude: school.latitude === '' ? null : school.latitude,
-        longitude: school.longitude === '' ? null : school.longitude,
+
+    let newLogoUrl = school.logo_url;
+
+    if (logoFile) {
+      // To prevent showing a stale preview if upload fails
+      URL.revokeObjectURL(school.logo_url); 
+      
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `logo.${fileExt}`;
+
+      // Upsert with the same name to replace the existing logo
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('school-logos')
+        .upload(fileName, logoFile, { upsert: true });
+
+      if (uploadError) {
+        alert('Gagal mengupload logo: ' + uploadError.message);
+        setLoading(false);
+        return;
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('school-logos')
+        .getPublicUrl(uploadData.path);
+      
+      newLogoUrl = urlData.publicUrl;
     }
-    const { error } = await supabase.from('schools').upsert({ id: 1, ...schoolData });
+
+    const updateData = {
+        id: 1,
+        name: school.name,
+        address: school.address,
+        phone_number: school.phone_number,
+        website: school.website,
+        latitude: school.latitude === '' ? null : parseFloat(school.latitude),
+        longitude: school.longitude === '' ? null : parseFloat(school.longitude),
+        logo_url: newLogoUrl,
+    };
+
+    const { error } = await supabase.from('schools').upsert(updateData);
 
     if (error) {
       alert('Gagal menyimpan data: ' + error.message);
     } else {
       alert('Informasi sekolah berhasil disimpan!');
+      setSchool(prev => ({...prev, logo_url: newLogoUrl}));
+      setLogoFile(null);
+      navigate('/dashboard');
     }
     setLoading(false);
   };
   
   if (loading && !school.name) {
     return (
-        <div className="flex justify-center items-center">
+        <div className="flex justify-center items-center h-full">
             <p>Loading...</p>
         </div>
     );
@@ -113,18 +157,29 @@ export function EditSchool() {
                 <Label htmlFor="address">Alamat</Label>
                 <Input id="address" value={school.address} onChange={handleChange} placeholder="Contoh: Jl. Pendidikan No. 1" />
               </div>
+              
               <div className="grid gap-2">
-                <Label htmlFor="logo_url">URL Logo</Label>
-                <Input id="logo_url" value={school.logo_url} onChange={handleChange} placeholder="https://example.com/logo.png" />
+                <Label htmlFor="logo">Logo Sekolah</Label>
+                <div className="flex items-center gap-4">
+                    {school.logo_url && !logoFile && (
+                        <img src={`${school.logo_url}?t=${new Date().getTime()}`} alt="Logo" className="h-20 w-20 object-contain rounded-md border border-gray-200" />
+                    )}
+                    {logoFile && (
+                        <img src={URL.createObjectURL(logoFile)} alt="Preview Logo" className="h-20 w-20 object-contain rounded-md border border-gray-200" />
+                    )}
+                    <Input id="logo" type="file" onChange={handleFileChange} accept="image/png, image/jpeg, image/svg+xml" className="max-w-xs" />
+                </div>
+                <p className="text-sm text-gray-500">Upload logo baru untuk mengganti yang lama. Format: PNG, JPG, SVG.</p>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                       <Label htmlFor="latitude">Latitude</Label>
-                      <Input id="latitude" type="number" value={school.latitude} onChange={handleChange} placeholder="-6.200000" />
+                      <Input id="latitude" type="number" step="any" value={school.latitude} onChange={handleChange} placeholder="-6.200000" />
                   </div>
                   <div className="grid gap-2">
                       <Label htmlFor="longitude">Longitude</Label>
-                      <Input id="longitude" type="number" value={school.longitude} onChange={handleChange} placeholder="106.816666" />
+                      <Input id="longitude" type="number" step="any" value={school.longitude} onChange={handleChange} placeholder="106.816666" />
                   </div>
               </div>
               <div className="grid gap-2">
