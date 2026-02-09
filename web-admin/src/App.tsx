@@ -1,6 +1,5 @@
 import {
   createBrowserRouter,
-  Outlet,
   RouterProvider,
 } from "react-router-dom";
 import LoginPage from "./pages/Login";

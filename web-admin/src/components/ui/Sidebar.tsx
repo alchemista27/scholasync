@@ -1,12 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, School, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { School, LogOut } from 'lucide-react';
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { role } = useAuth();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
