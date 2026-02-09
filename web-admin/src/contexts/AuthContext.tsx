@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
+import type { Session, User, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
@@ -18,8 +19,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChanged(
-      async (_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_event: AuthChangeEvent, session: Session | null) => {
         setSession(session);
         const currentUser = session?.user;
         setUser(currentUser ?? null);
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (currentUser) {
           const { data: roleData, error: roleError } = await supabase
             .from('user_roles')
-            .select('roles(name)')
+            .select('role:roles(name)')
             .eq('user_id', currentUser.id)
             .single();
           
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setRole(null);
           } else {
             // Safely access the role name to prevent crashes
-            setRole(roleData?.roles?.name ?? null);
+            setRole((roleData as any)?.role?.name ?? null);
           }
         } else {
           setRole(null);
