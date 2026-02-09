@@ -7,6 +7,8 @@ import { SchoolProfile } from "./pages/SchoolProfile";
 import { EditSchool } from "./pages/EditSchool";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { DashboardLayout } from "./components/DashboardLayout";
+import { Employees } from "./pages/Employees";
+import { AddEmployee } from "./pages/AddEmployee";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +22,18 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <SchoolProfile />,
+      },
+      {
+        path: "employees",
+        element: <Employees />,
+      },
+      {
+        path: "add-employee",
+        element: (
+          <ProtectedRoute>
+            <AddEmployee />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "edit-school",

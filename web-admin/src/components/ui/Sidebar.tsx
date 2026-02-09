@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
-import { School, LogOut } from 'lucide-react';
+import { School, LogOut, Users } from 'lucide-react';
 
 export function Sidebar() {
   const navigate = useNavigate();
@@ -20,6 +20,10 @@ export function Sidebar() {
         <Link to="/dashboard" className="flex items-center p-4 hover:bg-gray-700">
           <School className="mr-3" />
           Informasi Sekolah
+        </Link>
+        <Link to="/dashboard/employees" className="flex items-center p-4 hover:bg-gray-700">
+          <Users className="mr-3" />
+          Guru & Karyawan
         </Link>
       </nav>
       <div className="p-4">
