@@ -11,8 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
-export function SchoolInformation() {
+export function EditSchool() {
   const [school, setSchool] = useState({
     name: '',
     address: '',
@@ -63,7 +65,13 @@ export function SchoolInformation() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from('schools').upsert({ id: 1, ...school });
+    // Convert empty strings to null for numeric fields if necessary
+    const schoolData = {
+        ...school,
+        latitude: school.latitude === '' ? null : school.latitude,
+        longitude: school.longitude === '' ? null : school.longitude,
+    }
+    const { error } = await supabase.from('schools').upsert({ id: 1, ...schoolData });
 
     if (error) {
       alert('Gagal menyimpan data: ' + error.message);
@@ -75,20 +83,24 @@ export function SchoolInformation() {
   
   if (loading && !school.name) {
     return (
-        <div className="flex justify-center items-center min-h-screen">
+        <div className="flex justify-center items-center">
             <p>Loading...</p>
         </div>
     );
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-2xl">
+    <>
+      <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Kembali ke Dashboard
+      </Link>
+      <Card className="w-full max-w-4xl">
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle>Informasi Sekolah</CardTitle>
+            <CardTitle>Edit Informasi Sekolah</CardTitle>
             <CardDescription>
-              Masukkan atau perbarui informasi detail tentang sekolah.
+              Perbarui informasi detail tentang sekolah di sini.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -132,6 +144,6 @@ export function SchoolInformation() {
           </CardFooter>
         </form>
       </Card>
-    </div>
+    </>
   );
 }

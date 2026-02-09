@@ -1,11 +1,13 @@
 import {
   createBrowserRouter,
+  Outlet,
   RouterProvider,
 } from "react-router-dom";
 import LoginPage from "./pages/Login";
-import DashboardPage from "./pages/Dashboard";
-import { SchoolInformation } from "./pages/SchoolInformation";
+import { SchoolProfile } from "./pages/SchoolProfile";
+import { EditSchool } from "./pages/EditSchool";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { DashboardLayout } from "./components/DashboardLayout";
 
 const router = createBrowserRouter([
   {
@@ -14,15 +16,21 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />,
-  },
-  {
-    path: "/school-information",
-    element: (
-      <ProtectedRoute>
-        <SchoolInformation />
-      </ProtectedRoute>
-    ),
+    element: <DashboardLayout />,
+    children: [
+      {
+        index: true,
+        element: <SchoolProfile />,
+      },
+      {
+        path: "edit-school",
+        element: (
+          <ProtectedRoute>
+            <EditSchool />
+          </ProtectedRoute>
+        ),
+      },
+    ],
   },
 ]);
 
