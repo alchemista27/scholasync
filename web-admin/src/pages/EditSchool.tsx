@@ -74,55 +74,60 @@ export function EditSchool() {
     e.preventDefault();
     setLoading(true);
 
-    let newLogoUrl = school.logo_url;
+    try {
+      let newLogoUrl = school.logo_url;
 
-    if (logoFile) {
-      // To prevent showing a stale preview if upload fails
-      URL.revokeObjectURL(school.logo_url); 
-      
-      const fileExt = logoFile.name.split('.').pop();
-      const fileName = `logo.${fileExt}`;
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
 
-      // Upsert with the same name to replace the existing logo
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('school-logos')
-        .upload(fileName, logoFile, { upsert: true });
+        // Using a unique file name, so upsert is not strictly necessary
+        // but doesn't hurt. Let's keep the original intention of replacing.
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('school-logos')
+          .upload(fileName, logoFile, { upsert: true });
 
-      if (uploadError) {
-        alert('Gagal mengupload logo: ' + uploadError.message);
-        setLoading(false);
-        return;
+        if (uploadError) {
+          throw new Error('Gagal mengupload logo: ' + uploadError.message);
+        }
+
+        if (!uploadData) {
+            throw new Error('Gagal mengupload logo, data tidak ditemukan setelah upload.');
+        }
+        
+        const { data: urlData } = supabase.storage
+          .from('school-logos')
+          .getPublicUrl(uploadData.path);
+        
+        newLogoUrl = urlData.publicUrl;
       }
-      
-      const { data: urlData } = supabase.storage
-        .from('school-logos')
-        .getPublicUrl(uploadData.path);
-      
-      newLogoUrl = urlData.publicUrl;
+
+      const updateData = {
+          id: 1,
+          name: school.name,
+          address: school.address,
+          phone_number: school.phone_number,
+          website: school.website,
+          latitude: school.latitude === '' ? null : parseFloat(school.latitude),
+          longitude: school.longitude === '' ? null : parseFloat(school.longitude),
+          logo_url: newLogoUrl,
+      };
+
+      const { error } = await supabase.from('schools').upsert(updateData);
+
+      if (error) {
+        throw new Error('Gagal menyimpan data: ' + error.message);
+      } else {
+        alert('Informasi sekolah berhasil disimpan!');
+        setSchool(prev => ({...prev, logo_url: newLogoUrl}));
+        setLogoFile(null);
+        navigate('/dashboard');
+      }
+    } catch (error: any) {
+        alert(error.message || 'Terjadi kesalahan');
+    } finally {
+        setLoading(false);
     }
-
-    const updateData = {
-        id: 1,
-        name: school.name,
-        address: school.address,
-        phone_number: school.phone_number,
-        website: school.website,
-        latitude: school.latitude === '' ? null : parseFloat(school.latitude),
-        longitude: school.longitude === '' ? null : parseFloat(school.longitude),
-        logo_url: newLogoUrl,
-    };
-
-    const { error } = await supabase.from('schools').upsert(updateData);
-
-    if (error) {
-      alert('Gagal menyimpan data: ' + error.message);
-    } else {
-      alert('Informasi sekolah berhasil disimpan!');
-      setSchool(prev => ({...prev, logo_url: newLogoUrl}));
-      setLogoFile(null);
-      navigate('/dashboard');
-    }
-    setLoading(false);
   };
   
   if (loading && !school.name) {
