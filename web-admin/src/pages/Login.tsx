@@ -22,16 +22,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     const fetchLogo = async () => {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('logo_url')
-        .eq('id', 1)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('logo_url')
+          .eq('id', 1)
+          .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching school logo:', error);
-      } else if (data && data.logo_url) {
-        setLogoUrl(data.logo_url);
+        // Ignore "no rows found" (PGRST116) and "NOT_FOUND" (404) errors
+        if (error && error.code !== 'PGRST116' && error.code !== 'NOT_FOUND') {
+          console.error('Error fetching school logo:', error);
+        } else if (data && data.logo_url) {
+          setLogoUrl(data.logo_url);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching logo:', err);
       }
     };
 

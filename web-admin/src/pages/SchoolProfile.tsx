@@ -30,18 +30,24 @@ export function SchoolProfile() {
   useEffect(() => {
     const fetchSchool = async () => {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('id', 1)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('*')
+          .eq('id', 1)
+          .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching school data:', error);
-      } else if (data) {
-        setSchool(data);
+        // Ignore "no rows found" (PGRST116) and "NOT_FOUND" (404) errors
+        if (error && error.code !== 'PGRST116' && error.code !== 'NOT_FOUND') {
+          console.error('Error fetching school data:', error);
+        } else if (data) {
+          setSchool(data);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching school data:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchSchool();

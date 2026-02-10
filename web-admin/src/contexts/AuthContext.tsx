@@ -32,16 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchAndSetFavicon = async () => {
-      const { data, error } = await supabase
-        .from('schools')
-        .select('logo_url')
-        .eq('id', 1)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('logo_url')
+          .eq('id', 1)
+          .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching school logo for favicon:', error);
-      } else if (data && data.logo_url) {
-        setFavicon(data.logo_url);
+        // Ignore "no rows found" (PGRST116) and "NOT_FOUND" (404) errors
+        if (error && error.code !== 'PGRST116' && error.code !== 'NOT_FOUND') {
+          console.error('Error fetching school logo for favicon:', error);
+        } else if (data && data.logo_url) {
+          setFavicon(data.logo_url);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching favicon:', err);
       }
     };
 
@@ -49,24 +54,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
+        if (!isMounted) return;
+
         setSession(session);
         const currentUser = session?.user;
         setUser(currentUser ?? null);
 
         if (currentUser) {
-          const { data: roleData, error: roleError } = await supabase
-            .from('user_roles')
-            .select('role:roles(name)')
-            .eq('user_id', currentUser.id)
-            .single();
-          
-          if (roleError && roleError.code !== 'PGRST116') { // Ignore "no rows found" error
-            console.error("Error fetching user role:", roleError);
+          try {
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('role:roles(name)')
+              .eq('user_id', currentUser.id)
+              .single();
+            
+            // Ignore "no rows found" error (PGRST116) and "NOT_FOUND" (404)
+            if (roleError && roleError.code !== 'PGRST116' && roleError.code !== 'NOT_FOUND') {
+              console.error("Error fetching user role:", roleError);
+              setRole(null);
+            } else {
+              setRole((roleData as any)?.role?.name ?? null);
+            }
+          } catch (err) {
+            console.error("Unexpected error fetching user role:", err);
             setRole(null);
-          } else {
-            setRole((roleData as any)?.role?.name ?? null);
           }
         } else {
           setRole(null);
@@ -76,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
