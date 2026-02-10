@@ -103,7 +103,6 @@ export function EditSchool() {
       }
 
       const updateData = {
-          id: 1,
           name: school.name,
           address: school.address,
           phone_number: school.phone_number,
@@ -113,7 +112,10 @@ export function EditSchool() {
           logo_url: newLogoUrl,
       };
 
-      const { error } = await supabase.from('schools').upsert(updateData);
+      const { error } = await supabase
+        .from('schools')
+        .update(updateData)
+        .eq('id', 1);
 
       if (error) {
         throw new Error('Gagal menyimpan data: ' + error.message);
