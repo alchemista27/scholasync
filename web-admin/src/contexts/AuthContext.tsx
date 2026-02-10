@@ -39,9 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq('id', 1)
           .single();
 
-        // Ignore "no rows found" (PGRST116) and other 404 errors
         if (error) {
-          // Only log non-expected errors (not "no rows found")
           if (error.code !== 'PGRST116' && !error.message?.includes('0 rows')) {
             console.error('Error fetching school logo for favicon:', error);
           }
@@ -58,47 +56,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    let loadingTimeoutId: number | null = null;
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event: AuthChangeEvent, session: Session | null) => {
+    // Set a timeout to stop loading if auth check takes too long
+    loadingTimeoutId = window.setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 2000);
+    const { data } = supabase.auth.onAuthStateChange(
+        async (event: AuthChangeEvent, session: Session | null) => {
         if (!isMounted) return;
 
-        setSession(session);
         const currentUser = session?.user;
+        setSession(session);
         setUser(currentUser ?? null);
 
         if (currentUser) {
           try {
-            const { data: roleData, error: roleError } = await supabase
+            const rolePromise = supabase
               .from('user_roles')
               .select('role:roles(name)')
               .eq('user_id', currentUser.id)
               .single();
             
-            // Ignore "no rows found" error (PGRST116) and 404 errors
-            if (roleError) {
-              // Only log non-expected errors (not "no rows found")
-              if (roleError.code !== 'PGRST116' && !roleError.message?.includes('0 rows')) {
-                console.error("Error fetching user role:", roleError);
-              }
-              setRole(null);
-            } else {
-              setRole((roleData as any)?.role?.name ?? null);
+            const roleTimeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Role fetch timeout')), 3000)
+            );
+            
+            const result: any = await Promise.race([rolePromise, roleTimeoutPromise]);
+            if (isMounted) {
+              const roleName = (result?.data as any)?.role?.name ?? null;
+              setRole(roleName);
             }
           } catch (err) {
-            console.error("Unexpected error fetching user role:", err);
-            setRole(null);
+            if (isMounted) {
+              setRole(null);
+            }
           }
         } else {
           setRole(null);
         }
-        setLoading(false);
+        
+        // Only mark as not loading on INITIAL_SESSION event
+        // This ensures we don't render before the session is fully restored
+        if (isMounted && event === 'INITIAL_SESSION') {
+          if (loadingTimeoutId) {
+            clearTimeout(loadingTimeoutId);
+            loadingTimeoutId = null;
+          }
+          setLoading(false);
+        }
       }
     );
 
     return () => {
       isMounted = false;
-      authListener.subscription.unsubscribe();
+      if (loadingTimeoutId) {
+        clearTimeout(loadingTimeoutId);
+      }
+      data?.subscription?.unsubscribe();
     };
   }, []);
 

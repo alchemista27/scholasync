@@ -6,13 +6,14 @@ import { defineConfig } from "vite"
 // https://vite.dev/config/
 export default defineConfig({
   appType: 'spa',
+  server: {
+    port: 3000,
+    open: true,
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  server: {
-    middlewareMode: true,
   },
 })
