@@ -39,9 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq('id', 1)
           .single();
 
-        // Ignore "no rows found" (PGRST116) and "NOT_FOUND" (404) errors
-        if (error && error.code !== 'PGRST116' && error.code !== 'NOT_FOUND') {
-          console.error('Error fetching school logo for favicon:', error);
+        // Ignore "no rows found" (PGRST116) and other 404 errors
+        if (error) {
+          // Only log non-expected errors (not "no rows found")
+          if (error.code !== 'PGRST116' && !error.message?.includes('0 rows')) {
+            console.error('Error fetching school logo for favicon:', error);
+          }
         } else if (data && data.logo_url) {
           setFavicon(data.logo_url);
         }
@@ -72,9 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .eq('user_id', currentUser.id)
               .single();
             
-            // Ignore "no rows found" error (PGRST116) and "NOT_FOUND" (404)
-            if (roleError && roleError.code !== 'PGRST116' && roleError.code !== 'NOT_FOUND') {
-              console.error("Error fetching user role:", roleError);
+            // Ignore "no rows found" error (PGRST116) and 404 errors
+            if (roleError) {
+              // Only log non-expected errors (not "no rows found")
+              if (roleError.code !== 'PGRST116' && !roleError.message?.includes('0 rows')) {
+                console.error("Error fetching user role:", roleError);
+              }
               setRole(null);
             } else {
               setRole((roleData as any)?.role?.name ?? null);

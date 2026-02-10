@@ -37,9 +37,11 @@ export function SchoolProfile() {
           .eq('id', 1)
           .single();
 
-        // Ignore "no rows found" (PGRST116) and "NOT_FOUND" (404) errors
-        if (error && error.code !== 'PGRST116' && error.code !== 'NOT_FOUND') {
-          console.error('Error fetching school data:', error);
+        // Ignore "no rows found" errors - these are expected if no school exists yet
+        if (error) {
+          if (error.code !== 'PGRST116' && !error.message?.includes('0 rows')) {
+            console.error('Error fetching school data:', error);
+          }
         } else if (data) {
           setSchool(data);
         }

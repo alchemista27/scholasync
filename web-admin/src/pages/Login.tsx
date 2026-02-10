@@ -29,14 +29,16 @@ export default function LoginPage() {
           .eq('id', 1)
           .single();
 
-        // Ignore "no rows found" (PGRST116) and "NOT_FOUND" (404) errors
-        if (error && error.code !== 'PGRST116' && error.code !== 'NOT_FOUND') {
-          console.error('Error fetching school logo:', error);
+        // Ignore "no rows found" errors - these are expected if no school exists
+        if (error) {
+          if (error.code !== 'PGRST116' && !error.message?.includes('0 rows')) {
+            console.error('Error fetching school logo:', error);
+          }
         } else if (data && data.logo_url) {
           setLogoUrl(data.logo_url);
         }
       } catch (err) {
-        console.error('Unexpected error fetching logo:', err);
+        // Silently ignore errors - logo is optional
       }
     };
 
