@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* ── Brand Palette: Hijau, Gold, Hitam, Tosca ── */
+  --color-brand-black:     #0a0f0a;
+  --color-brand-black-2:   #111a11;
+  --color-brand-green:     #15803d;
+  --color-brand-green-2:   #16a34a;
+  --color-brand-green-3:   #22c55e;
+  --color-brand-gold:      #b8970a;
+  --color-brand-gold-2:    #d4af37;
+  --color-brand-gold-3:    #f0cc4a;
+  --color-brand-teal:      #0d9488;
+  --color-brand-teal-2:    #14b8a6;
+  --color-brand-teal-3:    #2dd4bf;
+
+  /* ── Semantic Tokens ── */
+  --color-background:      hsl(var(--background));
+  --color-foreground:      hsl(var(--foreground));
+  --color-card:            hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover:         hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary:         hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary:       hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted:           hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent:          hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive:     hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border:          hsl(var(--border));
+  --color-input:           hsl(var(--input));
+  --color-ring:            hsl(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  :root {
+    /* Dark mode aktif secara default dengan tema hijau-gold-hitam */
+    --background:        130 20% 5%;
+    --foreground:        120 10% 92%;
+
+    --card:              130 18% 8%;
+    --card-foreground:   120 10% 92%;
+
+    --popover:           130 18% 8%;
+    --popover-foreground: 120 10% 92%;
+
+    /* Primary = Gold */
+    --primary:           47 85% 45%;
+    --primary-foreground: 130 20% 5%;
+
+    /* Secondary = Teal */
+    --secondary:         174 75% 35%;
+    --secondary-foreground: 120 10% 95%;
+
+    --muted:             130 15% 14%;
+    --muted-foreground:  120 8% 55%;
+
+    /* Accent = Hijau terang */
+    --accent:            142 70% 38%;
+    --accent-foreground: 120 10% 95%;
+
+    --destructive:       0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:            130 15% 18%;
+    --input:             130 15% 14%;
+    --ring:              47 85% 45%;
+
+    --radius: 0.6rem;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+}
